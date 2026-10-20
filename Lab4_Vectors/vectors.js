@@ -58,18 +58,78 @@ function render() {
   const positionLocation = gl.getAttribLocation(program, "aPosition");
   const colourLocation = gl.getUniformLocation(program, "uColour");
 
+  /* // Vector testing
   // Points
   const a = [3, 0, 4];
   const b = [1, 2, 3];
+
+  const aPlusB = addVector(a, b);
+  const aMinusB = subtractVector(a, b);
+
+  const bMinusA = subtractVector(b, a);
+
+  const aScaled = scaleVector(a, 2);
+  const bScaled = scaleVector(b, 1/3);
     
   // Print text
   textElement.innerText += '\Points\n-------\n';
-  textElement.innerText += "a = " + printVector(a) + "\n";
-  textElement.innerText += "b = " + printVector(b) + "\n";
+  textElement.innerText += "a = " + printVector(a) + " (Pink)\n";
+  textElement.innerText += "b = " + printVector(b) + " (Yellow)\n";
+
+  // print text for added and subtracted vectors
+  textElement.innerText += '\nArithmetic operations on vectors\n--------------------------------\n';
+  textElement.innerText += "a+b = " + printVector(aPlusB) + " (Green)\n";
+  textElement.innerText += "a-b = " + printVector(aMinusB) + " (Red)\n";
+  textElement.innerText += "b-a = " + printVector(bMinusA) + " (White)\n";
+  textElement.innerText += "2a = " + aScaled + "\n";
+  textElement.innerText += "b/3 = " + bScaled + "\n";
 
   // Draw points
   drawVector(a, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
   drawVector(b, [1.0, 1.0, 0.0, 1.0], positionLocation, colourLocation);
+
+  drawVector(aPlusB, [0.0, 1.0, 0.0, 1.0], positionLocation, colourLocation);
+  drawVector(aMinusB, [1.0, 0.0, 0.0, 1.0], positionLocation, colourLocation);
+  drawVector(bMinusA, [1.0, 1.0, 1.0, 1.0], positionLocation, colourLocation);
+  drawVector(aScaled, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+  drawVector(bScaled, [1.0, 1.0, 0.0, 1.0], positionLocation, colourLocation);
+  */
+
+  // Vectors
+  const a = [3, 0, 4];
+  const b = [1, 2, 3];
+
+  const aHat = normaliseVector(a);
+  const bHat = normaliseVector(b);
+
+  const aLen = getVectorLength(a);
+  const bLen = getVectorLength(b);
+  
+  // Print text
+  textElement.innerText += 'Vectors\n-------\n';
+  textElement.innerText += "a = " + printVector(a) + "\n";
+  textElement.innerText += "b = " + printVector(b) + "\n";
+
+  // Vector magnitude and normalization
+  textElement.innerText += '\nVector magnitude and normalization\n----------------------------------\n';
+  textElement.innerText += "getVectorLength(a) = " + aLen + "\n";
+  textElement.innerText += "getVectorLength(b) = " + bLen + "\n";
+
+  //print normalised vectors
+  textElement.innerText += "aHat = " + printVector(aHat) + "\n";
+  textElement.innerText += "bHat = " + printVector(bHat) + "\n";
+
+  //print length of normalised vectors
+  textElement.innerText += "getVectorLength(aHat) = " + getVectorLength(aHat) + "\n";
+  textElement.innerText += "getVectorLength(bHat) = " + getVectorLength(bHat) + "\n";
+
+  // Draw vectors
+  drawVector(a, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+  drawVector(b, [1.0, 1.0, 0.0, 1.0], positionLocation, colourLocation);
+
+  //draw normalised vectors
+  drawVector(aHat, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+  drawVector(bHat, [1.0, 1.0, 0.0, 1.0], positionLocation, colourLocation);
 }
 
 function printVector(v) {
