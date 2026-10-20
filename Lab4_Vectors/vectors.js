@@ -58,7 +58,7 @@ function render() {
   const positionLocation = gl.getAttribLocation(program, "aPosition");
   const colourLocation = gl.getUniformLocation(program, "uColour");
 
-  /* // Vector testing
+  // Vector testing
   // Points
   const a = [3, 0, 4];
   const b = [1, 2, 3];
@@ -93,11 +93,11 @@ function render() {
   drawVector(bMinusA, [1.0, 1.0, 1.0, 1.0], positionLocation, colourLocation);
   drawVector(aScaled, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
   drawVector(bScaled, [1.0, 1.0, 0.0, 1.0], positionLocation, colourLocation);
-  */
+  
 
   // Vectors
-  const a = [3, 0, 4];
-  const b = [1, 2, 3];
+  //const a = [3, 0, 4];
+  //const b = [1, 2, 3];
 
   const aHat = normaliseVector(a);
   const bHat = normaliseVector(b);
