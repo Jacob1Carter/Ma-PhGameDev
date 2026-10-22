@@ -28,14 +28,14 @@ function sinWavePoint(x, a, w, k, t, ps) {
     // t = time
     // ps = phase shift
     y = a * Math.sin((k*x) - (w*t) + ps);
-    return y
+    return y;
 }
 
 function sinWave(startx, endx, a, w, k, t, ps) {
-    let sinWaveList = new Float32Array()
+    let sinWaveList = [];
     for (let x = startx; x < endx; x++) {
-        y = sinWavePoint(x, a, w, k, t, ps)
-        // sinWaveList + (x, y, 0)
-        console.log(x, y);
+        y = sinWavePoint(x, a, w, k, t, ps);
+        sinWaveList.push([x, y, 0]);
     }
+    return sinWaveList;
 }

@@ -74,7 +74,27 @@ function render() {
     setupDrawState(gl, bgBuffer, [0.6, 0.7, 0.9, 1.0], positionLocation, colourLocation);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
-    drawVector(line, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+    // drawVector(line, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+
+    sinWaveList = sinWave(-7, 10, 5, 3, 3, 3, 3);
+
+    for (let i = 0; i < sinWaveList.length; i++) {
+        console.log(sinWaveList[i]);
+        drawPoint(sinWaveList[i], [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+    }
+}
+
+function drawPoint(point, colour, positionLocation, colourLocation) {
+    // define the line
+    const pointData = new Float32Array(point);
+    // alloate memory and move data to GPU
+    const buffer = createShapeBuffer(gl, pointData);
+    // configure drawing
+    setupDrawState(gl, buffer, colour, positionLocation, colourLocation);
+    // Draw the point
+    gl.drawArrays(gl.POINTS, 0, 1);
+    //clean
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
 function drawVector(vector, colour, positionLocaion, colourLocation) {
