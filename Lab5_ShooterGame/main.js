@@ -1,9 +1,14 @@
 
 const canvas = document.getElementById('gameCanvas');
 const textElement = document.getElementById("textDisplay");
+const scoreElement = document.getElementById("scoreDisplay");
 
 /** @type {WebGL2RenderingContext} */
 const gl = initWebGL(canvas);
+
+// score
+
+let score = 0
 
 // turret
 const turretPos = { x:0.0, y:-0.8 };
@@ -112,7 +117,7 @@ function drawShip(x, y) {
 }
 
 function drawLaser(laserInstance) {
-    bindStateAndUniforms(laserBuffer, rgbNormal(196, 59, 255), laserInstance.x, laserInstance.y, laserInstance.angle)
+    bindStateAndUniforms(laserBuffer, rgbNormal(196, 59, 255), laserInstance.x, laserInstance.y, laserInstance.angle);
     gl.drawArrays(gl.LINES, 0, 2); 
 }
 
@@ -121,6 +126,13 @@ function processInput(currentTime) {
     if (!textElement) {
         console.log("textElement not found");
         return;
+    }
+    if (!scoreElement) {
+        console.log("scoreElement not found");
+        return;
+    }
+    else {
+        scoreElement.innerText = "Score: " + score;
     }
 
     if (keys.ArrowLeft && keys.ArrowRight) {
@@ -154,6 +166,13 @@ function processInput(currentTime) {
 
 // update
 function update(currentTime) {
+    if (score <= -10) {
+        window.location.replace("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwtY94wcx-ZsbIWs8bI7hOEHbJCfZdFsRGdrVGiV_X9K5_wLEeONcZ1fqj&s=10");
+    }
+    else if (score >= 10) {
+        window.location.replace("https://images.photowall.com/products/60498/smiley-face.jpg?h=699&q=85");
+    }
+
     const elaspedTime = currentTime - lastSpawnTime;
     if (elaspedTime >= shipGenTime) {
         let randomX = (Math.random() * (2.0 - shipSize)) - 1.0;
@@ -167,7 +186,7 @@ function update(currentTime) {
     const turretDirVector = {x:Math.cos(aimAngle), y:Math.sin(aimAngle)};
 
     for (let i=0; i < activeShips.length; i++) {
-        const shipPos = activeShips[i]
+        const shipPos = activeShips[i];
 
         shipPos.y -= shipSpeed;
 
@@ -185,12 +204,38 @@ function update(currentTime) {
                 isAimingAtShip = true;
             }
         }
+
+        if (shipPos.y > 1.1 || shipPos.x > 1.1 || shipPos.x < -1.1 || shipPos.y < -1.1) {
+            activeShips.splice(i, 1);
+            score += 1;
+            continue;
+        }
     }
 
     for (let i=0; i < activeLasers.length; i++) {
         const laser = activeLasers[i];
         laser.x += laser.vx;
-        laser.y += laser.xy;
+        laser.y += laser.vy;
+
+        if (laser.y > 1.1 || laser.x > 1.1 || laser.x < -1.1 || laser.y < -1.1) {
+            activeLasers.splice(i, 1);
+            continue;
+        }
+
+        for (let j=activeShips.length-1; j>=0; j--) {
+            const shipPos = activeShips[j];
+            if (
+                laser.x >= shipPos.x &&
+                laser.x <= shipPos.x + shipSize &&
+                laser.y >= shipPos.y &&
+                laser.y <= shipPos.y + shipSize
+            ) {
+                activeShips.splice(j, 1);
+                activeLasers.splice(i, 1);
+                score -= 1;
+                break;
+            }
+        }
     }
 }
 
@@ -212,7 +257,7 @@ function render() {
     drawGunTurret(turretPos.x, turretPos.y, aimAngle, turretColour);
 
     for (let i=0; i < activeShips.length; i++) {
-        const shipPos = activeShips[i]
+        const shipPos = activeShips[i];
         drawShip(shipPos.x, shipPos.y);
     }
 }
@@ -230,7 +275,7 @@ window.addEventListener("keydown", (event) => {
         keys[event.key] = true;
         event.preventDefault();
     }
-    if (event.key === " " || event.key === "Space") {
+    if (event.key === " " || event.code === "Space") {
         keys.Space = true;
         event.preventDefault();
     }
@@ -241,7 +286,7 @@ window.addEventListener("keyup", (event) => {
         keys[event.key] = false;
         event.preventDefault();
     }
-    if (event.key === " " || event.key === "Space") {
+    if (event.key === " " || event.code === "Space") {
         keys.Space = false;
         event.preventDefault();
     }
