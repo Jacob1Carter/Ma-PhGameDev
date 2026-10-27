@@ -39,3 +39,12 @@ function sinWave(startx, endx, a, w, k, t, ps, inc) {
     }
     return sinWaveList;
 }
+
+function rgbNormal(r, g, b) {
+    red = r/255;
+    green = g/255;
+    blue = b/255;
+    alpha = 1;
+
+    return [red, green, blue, alpha];
+}

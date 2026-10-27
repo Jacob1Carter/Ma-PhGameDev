@@ -71,36 +71,40 @@ function render() {
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
     //Draw
-    setupDrawState(gl, bgBuffer, [0.6, 0.7, 0.9, 1.0], positionLocation, colourLocation);
+    setupDrawState(gl, bgBuffer, rgbNormal(178, 187, 189), positionLocation, colourLocation);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
-    // drawVector(line, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+    const sinWaveList3 = sinWave(-10, 11, 1, 1, 1, 0, 0, 0.5);
+    drawSinWave(sinWaveList3, rgbNormal(30, 111, 125), -0.4, -3.3, -10, positionLocation, colourLocation)
 
-    const sinWaveList = sinWave(-10, 10, 1, 1, 1, 0, 0, 1);
+    const sinWaveList2 = sinWave(-10, 10, 1, 1, 1, 0, 0, 0.5);
+    drawSinWave(sinWaveList2, rgbNormal(67, 154, 168), 0, -1.7, -10, positionLocation, colourLocation)
 
-    for (let i = 0; i < sinWaveList.length; i++) {
+    const sinWaveList1 = sinWave(-11, 10, 1, 1, 1, 0, 0, 0.5);
+    drawSinWave(sinWaveList1, rgbNormal(113, 200, 214, 1), 0.4, 0, -10, positionLocation, colourLocation)
+
+}
+
+function drawSinWave(waveList, colour, xOffset, yOffset, floor, positionLocation, colourLocation) {
+    for (let i = 0; i < waveList.length; i++) {
         if (i > 0) {
-            const prevPoint = sinWaveList[i - 1];
-            const currentPoint = sinWaveList[i];
-            const lineData = new Float32Array([
-                prevPoint[0], prevPoint[1], prevPoint[2],
-                currentPoint[0], currentPoint[1], currentPoint[2]
-            ]);
+            const prevPoint = waveList[i - 1];
+            const currentPoint = waveList[i];
             const segmentData = new Float32Array([
-                prevPoint[0], prevPoint[1], prevPoint[2],
-                currentPoint[0], currentPoint[1], currentPoint[2],
-                currentPoint[0], -10, currentPoint[2],
-                prevPoint[0], -10, prevPoint[2]
+                prevPoint[0]+xOffset, prevPoint[1]+yOffset, prevPoint[2],
+                currentPoint[0]+xOffset, currentPoint[1]+yOffset, currentPoint[2],
+                prevPoint[0]+xOffset, floor, prevPoint[2],
+                currentPoint[0]+xOffset, floor, currentPoint[2]
             ])
 
-            const lineBuffer = createShapeBuffer(gl, lineData);
+            console.log(segmentData);
+
             const segmentBuffer = createShapeBuffer(gl, segmentData);
 
-            setupDrawState(gl, lineBuffer, [0.6, 0.4, 0.3, 1.0], positionLocation, colourLocation);
-            setupDrawState(gl, segmentBuffer, [0.6, 0.4, 0.3, 0.5], positionLocation, colourLocation);
+            setupDrawState(gl, segmentBuffer, colour, positionLocation, colourLocation);
 
-            gl.drawArrays(gl.LINES, 0, 2);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            gl.bindBuffer(gl.ARRAY_BUFFER, null);
         }
     }
 }
