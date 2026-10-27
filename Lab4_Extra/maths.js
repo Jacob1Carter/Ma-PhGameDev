@@ -21,19 +21,19 @@ function normaliseVector(v) {
 }
 
 function sinWavePoint(x, a, w, k, t, ps) {
-    // x = x coordinate
+    y = a * Math.sin((k*x) - (w*t) + ps);
+    return y;
+}
+
+function sinWave(startx, endx, a, w, k, t, ps, inc) {
     // a = amplitude
     // w = angular frequesncy
     // k = wave number
     // t = time
     // ps = phase shift
-    y = a * Math.sin((k*x) - (w*t) + ps);
-    return y;
-}
-
-function sinWave(startx, endx, a, w, k, t, ps) {
+    // inc = increment
     let sinWaveList = [];
-    for (let x = startx; x < endx; x++) {
+    for (let x = startx; x <= endx; x+=inc) {
         y = sinWavePoint(x, a, w, k, t, ps);
         sinWaveList.push([x, y, 0]);
     }

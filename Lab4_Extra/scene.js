@@ -76,11 +76,32 @@ function render() {
 
     // drawVector(line, [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
 
-    sinWaveList = sinWave(-7, 10, 5, 3, 3, 3, 3);
+    const sinWaveList = sinWave(-10, 10, 1, 1, 1, 0, 0, 1);
 
     for (let i = 0; i < sinWaveList.length; i++) {
-        console.log(sinWaveList[i]);
-        drawPoint(sinWaveList[i], [1.0, 0.0, 1.0, 1.0], positionLocation, colourLocation);
+        if (i > 0) {
+            const prevPoint = sinWaveList[i - 1];
+            const currentPoint = sinWaveList[i];
+            const lineData = new Float32Array([
+                prevPoint[0], prevPoint[1], prevPoint[2],
+                currentPoint[0], currentPoint[1], currentPoint[2]
+            ]);
+            const segmentData = new Float32Array([
+                prevPoint[0], prevPoint[1], prevPoint[2],
+                currentPoint[0], currentPoint[1], currentPoint[2],
+                currentPoint[0], -10, currentPoint[2],
+                prevPoint[0], -10, prevPoint[2]
+            ])
+
+            const lineBuffer = createShapeBuffer(gl, lineData);
+            const segmentBuffer = createShapeBuffer(gl, segmentData);
+
+            setupDrawState(gl, lineBuffer, [0.6, 0.4, 0.3, 1.0], positionLocation, colourLocation);
+            setupDrawState(gl, segmentBuffer, [0.6, 0.4, 0.3, 0.5], positionLocation, colourLocation);
+
+            gl.drawArrays(gl.LINES, 0, 2);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
     }
 }
 
