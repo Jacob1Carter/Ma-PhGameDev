@@ -52,3 +52,11 @@ function rgbNormal(r, g, b) {
 function getDotProduct(a, b) {
     return (a.x * b.x) + (a.y * b.y);
 }
+
+function getCrossProduct(a, b) {
+    return {
+        x: a.y * b.z - a.z * b.y,
+        y: a.z * b.x - a.x * b.z,
+        z: a.x * b.y - a.y * b.x
+    };
+}

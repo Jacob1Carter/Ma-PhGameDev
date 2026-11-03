@@ -63,6 +63,7 @@ function createMesh(gl, vertices, indices, positionLocation) {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
     gl.bindVertexArray(null);
+
     // return both properties expected by the draw function
-    return { vao : vao, vertexCount: vertices.length / 2 };
+    return { vao, indexCount: indices.length };
 }

@@ -6,6 +6,26 @@ const scoreElement = document.getElementById("scoreDisplay");
 /** @type {WebGL2RenderingContext} */
 const gl = initWebGL(canvas);
 
+// inputs
+const keys = {
+    ArrowUp: false,
+    ArrowDown: false,
+    ArrowLeft: false,
+    ArrowRight: false,
+    Space: false,
+    w: false,
+    a: false,
+    s: false,
+    d: false
+};
+
+// playable boundary
+
+const rightBoundary = 0.95;
+const leftBoundary = -0.95;
+const topBoundary = 0.95;
+const bottomBoundary = -0.95;
+
 // --- SHADER SETUP ---
 const vertexShaderSource = `#version 300 es
     precision mediump float;
@@ -53,7 +73,7 @@ let score = 0
 // turret
 const turretPos = { x:0.0, y:-0.8 };
 let aimAngle = Math.PI / 2; // radians
-const rotationSpeed = 0.04;
+const rotationSpeed = 0.01;
 let isAimingAtShip = false;
 
 // player
@@ -65,7 +85,7 @@ const playerRadius = 0.04;
 const playerVertices = [
     0.0, 0.5,
     -0.4, -0.5,
-    0.0, 0.2,
+    0.0, -0.2,
     0.4, -0.5
 ];
 
@@ -76,13 +96,27 @@ const playerIndices = [
 
 const playerMesh = createMesh(gl, playerVertices, playerIndices, positionAttribute)
 
-// inputs
-const keys = {ArrowLeft: false, ArrowRight: false, Space: false};
+// asteroids
+const asteroids = [
+    { x: -0.4, y: 0.3, radius: 0.15 },
+    { x: 0.4, y: -0.1, radius: 0.2 },
+    { x: -0.2, y: -0.4, radius: 0.12 }
+]
+
+const asteroidSegments = 24;
+const asteroidVertices = [];
+const asteroidIndices = [];
+for (let i = 0; i <= asteroidSegments; i++) {
+    const angleCircle = (i * 2 * Math.PI) / asteroidSegments;
+    asteroidVertices.push(Math.cos(angleCircle), Math.sin(angleCircle));
+    asteroidIndices.push(i);
+}
+const asteroidMesh = createMesh(gl, asteroidVertices, asteroidIndices, positionAttribute);
 
 // projectiles
 let activeLasers = [];
 const laserSpeed = 0.03;
-const fireCooldown = 150;
+const fireCooldown = 450;
 let lastFireTime = 0;
 
 // laser
@@ -142,8 +176,24 @@ function drawPlayer(currentPlayerPos) {
     gl.bindVertexArray(null);
 }
 
+function drawAsteroid(x, y, radius) {
+    gl.bindVertexArray(asteroidMesh.vao);
+    setUniforms([0.4, 0.4, 0.4, 1.0], x, y, 0.0, radius);
+    gl.drawElements(gl.TRIANGLE_FAN, asteroidMesh.indexCount, gl.UNSIGNED_SHORT, 0);
+}
+
+// --------- INIT ----------
+
+function init() {
+    const currentTime = performance.now();
+    lastFireTime = currentTime + 2000; // 2 second delay
+}
+
 // input
 function processInput(currentTime) {
+    const prevX = playerPos.x;
+    const prevy = playerPos.y;
+
     if (!textElement) {
         console.log("textElement not found");
         return;
@@ -156,32 +206,33 @@ function processInput(currentTime) {
         scoreElement.innerText = "Score: " + score;
     }
 
-    if (keys.ArrowLeft && keys.ArrowRight) {
-        textElement.innerText = "Both arrows pressed, \nAim angle at " + aimAngle.toFixed(2);
-    }
-    else if (keys.ArrowLeft) {
-        aimAngle += rotationSpeed;
-        textElement.innerText = "Left arrow pressed, \nAim angle now " + aimAngle.toFixed(2);
-    }
-    else if (keys.ArrowRight) {
-        aimAngle -= rotationSpeed;
-        textElement.innerText = "Right arrow pressed, \nAim angle now " + aimAngle.toFixed(2);
-    }
-    else {
-        textElement.innerText = "Nothing pressed, \nAim angle at " + aimAngle.toFixed(2);
+    // player movement
+
+    if (keys.ArrowUp || keys.w) playerPos.y += playerSpeed;
+    if (keys.ArrowDown || keys.s) playerPos.y -= playerSpeed;
+    if (keys.ArrowLeft || keys.a) playerPos.x -= playerSpeed;
+    if (keys.ArrowRight || keys.d) playerPos.x += playerSpeed;
+    
+    if (playerPos.x > rightBoundary) playerPos.x = rightBoundary;
+    if (playerPos.x < leftBoundary) playerPos.x = leftBoundary;
+    if (playerPos.y > topBoundary) playerPos.y = topBoundary;
+    if (playerPos.y < bottomBoundary) playerPos.y = bottomBoundary;
+
+    let hitAsteroid = false;
+
+    for (let i=0; i<asteroids.length; i++) {
+        const asteroid = asteroids[i];
+        const dx = playerPos.x - asteroid.x;
+        const dy = playerPos.y - asteroid.y;
+        if (Math.sqrt(dx*dx + dy*dy) < playerRadius + asteroid.radius) {
+            hitAsteroid = true;
+            break;
+        }
     }
 
-    const elaspedTime = currentTime - lastFireTime;
-
-    if (keys.Space && elaspedTime >= fireCooldown) {
-        activeLasers.push({
-            x: turretPos.x,
-            y: turretPos.y,
-            vx: Math.cos(aimAngle) * laserSpeed,
-            vy: Math.sin(aimAngle) * laserSpeed,
-            angle: aimAngle
-        });
-        lastFireTime = currentTime;
+    if (hitAsteroid) {
+        playerPos.x = prevX;
+        playerPos.y = prevy;
     }
 }
 
@@ -205,61 +256,56 @@ function update(currentTime) {
     isAimingAtShip = false;
 
     // turret direction vector
-    const turretDirVector = {x:Math.cos(aimAngle), y:Math.sin(aimAngle)};
-/*
-    for (let i=0; i < activeShips.length; i++) {
-        const shipPos = activeShips[i];
+    const turretDirVector = {x: Math.cos(aimAngle), y: Math.sin(aimAngle)};
 
-        shipPos.y -= shipSpeed;
+    // find target direction
+    const targetDirVector = {x: playerPos.x - turretPos.x, y: playerPos.y - turretPos.y};
+    const targetDirLength = Math.sqrt(targetDirVector.x * targetDirVector.x + targetDirVector.y * targetDirVector.y);
+    const unitTargetDirVector = {x: targetDirVector.x / targetDirLength, y:targetDirVector.y / targetDirLength};
 
-        // ship centre
-        const shipCentre = {x: shipPos.x + (shipSize / 2), y: shipPos.y + (shipSize / 2)};
-
-        // find target direction
-        const targetDirVector = {x:shipCentre.x - turretPos.x, y:shipCentre.y - turretPos.y};
-        const targetDirLength = Math.sqrt(targetDirVector.x * targetDirVector.x + targetDirVector.y * targetDirVector.y);
-        const unitTargetDirVector = {x: targetDirVector.x / targetDirLength, y:targetDirVector.y / targetDirLength};
-
-        if (targetDirLength > 0) {
-            const dotProduct = getDotProduct(turretDirVector, unitTargetDirVector);
-            if (dotProduct > 0.98) {
-                isAimingAtShip = true;
+    if (targetDirLength > 0) {
+        const dotProduct = getDotProduct(turretDirVector, unitTargetDirVector);
+        if (dotProduct > 0.995) {
+            isAimingAtShip = true;
+            if (currentTime - lastFireTime >= fireCooldown) {
+                activeLasers.push({
+                    x: turretPos.x,
+                    y: turretPos.y,
+                    vx: Math.cos(aimAngle) * laserSpeed,
+                    vy: Math.sin(aimAngle) * laserSpeed,
+                    angle: aimAngle
+                });
+                lastFireTime = currentTime;
             }
         }
 
-        if (shipPos.y > 1.1 || shipPos.x > 1.1 || shipPos.x < -1.1 || shipPos.y < -1.1) {
-            activeShips.splice(i, 1);
-            score += 1;
-            continue;
+        const crossProduct = getCrossProduct(turretDirVector, unitTargetDirVector);
+        if (Math.abs(crossProduct.z) > 0.02) {
+            aimAngle += Math.sign(crossProduct.z) * rotationSpeed;
         }
-    }*/
+    }
 
     for (let i=0; i < activeLasers.length; i++) {
         const laser = activeLasers[i];
         laser.x += laser.vx;
         laser.y += laser.vy;
 
-        if (laser.y > 1.1 || laser.x > 1.1 || laser.x < -1.1 || laser.y < -1.1) {
-            activeLasers.splice(i, 1);
-            continue;
-        }
-
-        /*
-        for (let j=activeShips.length-1; j>=0; j--) {
-            const shipPos = activeShips[j];
-            if (
-                laser.x >= shipPos.x &&
-                laser.x <= shipPos.x + shipSize &&
-                laser.y >= shipPos.y &&
-                laser.y <= shipPos.y + shipSize
-            ) {
-                activeShips.splice(j, 1);
-                activeLasers.splice(i, 1);
-                score -= 1;
+        let laserBlocked = false;
+        for (let j=0; j < asteroids.length; j++) {
+            const asteroid = asteroids[j];
+            const ldx = laser.x - asteroid.x;
+            const ldy = laser.y - asteroid.y;
+            if (Math.sqrt(ldx * ldx + ldy * ldy) < asteroid.radius) {
+                laserBlocked = true;
                 break;
             }
         }
-            */
+
+
+        if (laser.y > 1.1 || laser.x > 1.1 || laser.x < -1.1 || laser.y < -1.1 || laserBlocked) {
+            activeLasers.splice(i, 1);
+            continue;
+        }
     }
 }
 
@@ -276,6 +322,10 @@ function render() {
 
     for (let i=0; i < activeLasers.length; i++) {
         drawLaser(activeLasers[i]);
+    }
+
+    for (let i=0; i < asteroids.length; i++) {
+        drawAsteroid(asteroids[i].x, asteroids[i].y, asteroids[i].radius);
     }
 
     drawGunTurret(turretPos.x, turretPos.y, aimAngle, turretColour);
@@ -313,5 +363,14 @@ window.addEventListener("keyup", (event) => {
     }
 });
 
+window.addEventListener("keydown", (e) => {
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+});
+
+window.addEventListener("keyup", (e) => {
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+});
+
 // execute
+init();
 requestAnimationFrame(gameLoop);
