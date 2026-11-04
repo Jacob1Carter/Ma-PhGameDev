@@ -12,7 +12,7 @@ const keys = {
     ArrowDown: false,
     ArrowLeft: false,
     ArrowRight: false,
-    Space: false,
+    r: false,
     w: false,
     a: false,
     s: false,
@@ -21,10 +21,20 @@ const keys = {
 
 // playable boundary
 
-const rightBoundary = 0.95;
-const leftBoundary = -0.95;
-const topBoundary = 0.95;
-const bottomBoundary = -0.95;
+const rightBoundary = 1.95;
+const leftBoundary = -1.95;
+const topBoundary = 1.95;
+const bottomBoundary = -1.95;
+
+// global game variables
+const GameState = Object.freeze({
+    PLAYING: "playing",
+    GAME_WON: "game_won",
+    GAME_LOST: "game_lost"
+});
+
+/** @type {string} */
+let currentGameState = GameState.PLAYING;
 
 // --- SHADER SETUP ---
 const vertexShaderSource = `#version 300 es
@@ -43,7 +53,7 @@ const vertexShaderSource = `#version 300 es
             scaled.x * c - scaled.y * s,
             scaled.x * s + scaled.y * c
         );
-        gl_Position = vec4(vec3(rotated, 0.0) + uTranslation, 1.0);
+        gl_Position = vec4((vec3(rotated, 0.0) + uTranslation) / 2.0, 1.0);
     }
 `;
 
@@ -66,21 +76,20 @@ const translationLocation = gl.getUniformLocation(shaderProgram, "uTranslation")
 const rotationLocation = gl.getUniformLocation(shaderProgram, "uRotation");
 const scaleLocation = gl.getUniformLocation(shaderProgram, "uScale");
 
-// score
-
-let score = 0
-
 // turret
-const turretPos = { x:0.0, y:-0.8 };
+const turretPos = { x:0.0, y:-1.8 };
 let aimAngle = Math.PI / 2; // radians
 const rotationSpeed = 0.01;
 let isAimingAtShip = false;
 
 // player
-const playerPos = { x: 0.0, y: 0.2, z: 0.0};
+const playerPos = { x: 0.0, y: 1.6, z: 0.0};
 const playerSpeed = 0.015;
 const playerSize = 0.15;
 const playerRadius = 0.04;
+
+const playerMaxHealth = 100;
+let playerHealth = playerMaxHealth;
 
 const playerVertices = [
     0.0, 0.5,
@@ -98,9 +107,10 @@ const playerMesh = createMesh(gl, playerVertices, playerIndices, positionAttribu
 
 // asteroids
 const asteroids = [
-    { x: -0.4, y: 0.3, radius: 0.15 },
-    { x: 0.4, y: -0.1, radius: 0.2 },
-    { x: -0.2, y: -0.4, radius: 0.12 }
+    { x: -1.0, y: 0.6, radius: 0.15 },
+    { x: 1.1, y: 0.2, radius: 0.2 },
+    { x: -0.6, y: -0.6, radius: 0.12 },
+    { x: 0.8, y: -1.1, radius: 0.2 }
 ]
 
 const asteroidSegments = 24;
@@ -187,10 +197,27 @@ function drawAsteroid(x, y, radius) {
 function init() {
     const currentTime = performance.now();
     lastFireTime = currentTime + 2000; // 2 second delay
+
+    if (textElement) {
+        textElement.innerText = "Dodge the lasers and reach the bottom!";
+    }
 }
 
 // input
 function processInput(currentTime) {
+    if (currentGameState !== GameState.PLAYING) {
+        if (keys.Space) {
+            currentGameState = GameState.PLAYING;
+        }
+        else {
+            return;
+        }
+    }
+
+    if (keys.r) {
+        console.log("SPACE")
+    }
+
     const prevX = playerPos.x;
     const prevy = playerPos.y;
 
@@ -203,7 +230,7 @@ function processInput(currentTime) {
         return;
     }
     else {
-        scoreElement.innerText = "Score: " + score;
+        scoreElement.innerText = "Health: " + playerHealth;
     }
 
     // player movement
@@ -216,7 +243,6 @@ function processInput(currentTime) {
     if (playerPos.x > rightBoundary) playerPos.x = rightBoundary;
     if (playerPos.x < leftBoundary) playerPos.x = leftBoundary;
     if (playerPos.y > topBoundary) playerPos.y = topBoundary;
-    if (playerPos.y < bottomBoundary) playerPos.y = bottomBoundary;
 
     let hitAsteroid = false;
 
@@ -238,19 +264,17 @@ function processInput(currentTime) {
 
 // update
 function update(currentTime) {
-    if (score <= -10) {
-        const loseContextExt = gl.getExtension("WEBGL_lose_context");
-        if (loseContextExt) {
-            loseContextExt.loseContext();
-        }
-        //window.location.replace("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwtY94wcx-ZsbIWs8bI7hOEHbJCfZdFsRGdrVGiV_X9K5_wLEeONcZ1fqj&s=10");
+    if (currentGameState !== GameState.PLAYING) {
+        return;
     }
-    else if (score >= 10) {
-        const loseContextExt = gl.getExtension("WEBGL_lose_context");
-        if (loseContextExt) {
-            loseContextExt.loseContext();
+
+    if (playerPos.y < bottomBoundary) {
+        currentGameState = GameState.GAME_WON;
+
+        if (textElement) {
+            textElement.innerText = "Mission Acomplished!";
         }
-        //window.location.replace("https://images.photowall.com/products/60498/smiley-face.jpg?h=699&q=85");
+        return;
     }
 
     isAimingAtShip = false;
@@ -302,17 +326,42 @@ function update(currentTime) {
         }
 
 
-        if (laser.y > 1.1 || laser.x > 1.1 || laser.x < -1.1 || laser.y < -1.1 || laserBlocked) {
+        if (laser.y > 2.1 || laser.x > 2.1 || laser.x < -2.1 || laser.y < -2.1 || laserBlocked) {
             activeLasers.splice(i, 1);
             continue;
+        }
+
+        const dx = laser.x - playerPos.x;
+        const dy = laser.y - playerPos.y;
+        if (Math.sqrt(dx*dx + dy*dy) < playerRadius) {
+            playerHealth -= calculate_falloff_linear(5, 15, 0, 100, 50);
+            if (playerHealth < 0) {
+                playerHealth = 0
+                currentGameState = GameState.GAME_LOST;
+
+                if (textElement) {
+                    textElement.innerText = "Ship Destroyed!";
+                }
+                break;
+            }
         }
     }
 }
 
 // --- RENDER ---
 function render() {
-    gl.clearColor(1.0, 1.0, 1.0, 1.0); 
+    if (currentGameState === GameState.GAME_LOST) {
+        gl.clearColor(1.0, 0.8, 0.8, 1.0);
+    }
+    else if (currentGameState === GameState.GAME_WON) {
+        gl.clearColor(0.8, 1.0, 0.8, 1.0);
+    }
+    else {
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    }
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+
 
     let turretColour = rgbNormal(92, 157, 195);
     
@@ -340,28 +389,6 @@ function gameLoop(timestamp) {
     render();
     requestAnimationFrame(gameLoop);
 }
-
-window.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        keys[event.key] = true;
-        event.preventDefault();
-    }
-    if (event.key === " " || event.code === "Space") {
-        keys.Space = true;
-        event.preventDefault();
-    }
-});
-
-window.addEventListener("keyup", (event) => {
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        keys[event.key] = false;
-        event.preventDefault();
-    }
-    if (event.key === " " || event.code === "Space") {
-        keys.Space = false;
-        event.preventDefault();
-    }
-});
 
 window.addEventListener("keydown", (e) => {
     if (keys.hasOwnProperty(e.key)) keys[e.key] = true;

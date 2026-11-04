@@ -60,3 +60,8 @@ function getCrossProduct(a, b) {
         z: a.x * b.y - a.y * b.x
     };
 }
+
+function calculate_falloff_linear(min, max, near, far, dist) {
+    const dist_normal = (dist - near) / (far - near);
+    return dist_normal * min + (1.0 - dist_normal) * max // unfinished
+}
