@@ -42,19 +42,19 @@ class Student {
     }
 
     getClassification(mark) {
-        if (70 >= mark >= 100) {
+        if (70 <= mark && mark <= 100) {
             return "First class";
         }
-        else if (60 >= mark > 70) {
+        else if (60 <= mark && mark < 70) {
             return "Upper-second class";
         }
-        else if (50 >= mark > 59) {
+        else if (50 <= mark && mark < 59) {
             return "Lower-second class";
         }
-        else if (40 >= mark > 49) {
+        else if (40 <= mark && mark < 49) {
             return "Third class";
         }
-        else if (0 >= mark > 40) {
+        else if (0 <= mark && mark < 40) {
             return "Fail";
         }
         else {
