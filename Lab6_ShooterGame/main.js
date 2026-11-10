@@ -77,10 +77,25 @@ const rotationLocation = gl.getUniformLocation(shaderProgram, "uRotation");
 const scaleLocation = gl.getUniformLocation(shaderProgram, "uScale");
 
 // turret
-const turretPos = { x:0.0, y:-1.8 };
-let aimAngle = Math.PI / 2; // radians
+const turretsPos = [
+    { x:-1.8, y:-1.8 },
+    { x:0.0, y:-1.8 },
+    { x:1.8, y:-1.8 }
+];
+
+const aimAngles = [
+    Math.PI / 2,
+    Math.PI / 2,
+    Math.PI / 2
+];
+
+let isAimingAtShip = [
+    false,
+    false,
+    false
+]
+
 const rotationSpeed = 0.01;
-let isAimingAtShip = false;
 
 // player
 const playerPos = { x: 0.0, y: 1.6, z: 0.0};
@@ -107,10 +122,12 @@ const playerMesh = createMesh(gl, playerVertices, playerIndices, positionAttribu
 
 // asteroids
 const asteroids = [
-    { x: -1.0, y: 0.6, radius: 0.15 },
-    { x: 1.1, y: 0.2, radius: 0.2 },
-    { x: -0.6, y: -0.6, radius: 0.12 },
-    { x: 0.8, y: -1.1, radius: 0.2 }
+    { x: randfloat(-1.8, 1.8), y: randfloat(-1.2, 1.2), radius: randfloat(0.12, 0.24) },
+    { x: randfloat(-1.8, 1.8), y: randfloat(-1.2, 1.2), radius: randfloat(0.12, 0.24) },
+    { x: randfloat(-1.8, 1.8), y: randfloat(-1.2, 1.2), radius: randfloat(0.12, 0.24) },
+    { x: randfloat(-1.8, 1.8), y: randfloat(-1.2, 1.2), radius: randfloat(0.12, 0.24) },
+    { x: randfloat(-1.8, 1.8), y: randfloat(-1.2, 1.2), radius: randfloat(0.12, 0.24) },
+    { x: randfloat(-1.8, 1.8), y: randfloat(-1.2, 1.2), radius: randfloat(0.12, 0.24) }
 ]
 
 const asteroidSegments = 24;
@@ -277,35 +294,40 @@ function update(currentTime) {
         return;
     }
 
-    isAimingAtShip = false;
+    isAimingAtShip = [
+        false,
+        false,
+        false
+    ]
 
-    // turret direction vector
-    const turretDirVector = {x: Math.cos(aimAngle), y: Math.sin(aimAngle)};
+    for (let i=0; i<turretsPos.length; i++) {
+        // turret direction vector
+        const turretDirVector = {x: Math.cos(aimAngles[i]), y: Math.sin(aimAngles[i])};
+        // find target direction
+        const targetDirVector = {x: playerPos.x - turretsPos[i].x, y: playerPos.y - turretsPos[i].y};
+        const targetDirLength = Math.sqrt(targetDirVector.x * targetDirVector.x + targetDirVector.y * targetDirVector.y);
+        const unitTargetDirVector = {x: targetDirVector.x / targetDirLength, y:targetDirVector.y / targetDirLength};
 
-    // find target direction
-    const targetDirVector = {x: playerPos.x - turretPos.x, y: playerPos.y - turretPos.y};
-    const targetDirLength = Math.sqrt(targetDirVector.x * targetDirVector.x + targetDirVector.y * targetDirVector.y);
-    const unitTargetDirVector = {x: targetDirVector.x / targetDirLength, y:targetDirVector.y / targetDirLength};
-
-    if (targetDirLength > 0) {
-        const dotProduct = getDotProduct(turretDirVector, unitTargetDirVector);
-        if (dotProduct > 0.995) {
-            isAimingAtShip = true;
-            if (currentTime - lastFireTime >= fireCooldown) {
-                activeLasers.push({
-                    x: turretPos.x,
-                    y: turretPos.y,
-                    vx: Math.cos(aimAngle) * laserSpeed,
-                    vy: Math.sin(aimAngle) * laserSpeed,
-                    angle: aimAngle
-                });
-                lastFireTime = currentTime;
+        if (targetDirLength > 0) {
+            const dotProduct = getDotProduct(turretDirVector, unitTargetDirVector);
+            if (dotProduct > 0.995) {
+                isAimingAtShip[i] = true;
+                if (currentTime - lastFireTime >= fireCooldown) {
+                    activeLasers.push({
+                        x: turretsPos[i].x,
+                        y: turretsPos[i].y,
+                        vx: Math.cos(aimAngles[i]) * laserSpeed,
+                        vy: Math.sin(aimAngles[i]) * laserSpeed,
+                        angle: aimAngles[i]
+                    });
+                    lastFireTime = currentTime;
+                }
             }
-        }
 
-        const crossProduct = getCrossProduct(turretDirVector, unitTargetDirVector);
-        if (Math.abs(crossProduct.z) > 0.02) {
-            aimAngle += Math.sign(crossProduct.z) * rotationSpeed;
+            const crossProduct = getCrossProduct(turretDirVector, unitTargetDirVector);
+            if (Math.abs(crossProduct.z) > 0.02) {
+                aimAngles[i] += Math.sign(crossProduct.z) * rotationSpeed;
+            }
         }
     }
 
@@ -377,7 +399,9 @@ function render() {
         drawAsteroid(asteroids[i].x, asteroids[i].y, asteroids[i].radius);
     }
 
-    drawGunTurret(turretPos.x, turretPos.y, aimAngle, turretColour);
+    for (let i=0; i<turretsPos.length; i++) {
+        drawGunTurret(turretsPos[i].x, turretsPos[i].y, aimAngles[i], turretColour);
+    }
 
     drawPlayer(playerPos);
 }

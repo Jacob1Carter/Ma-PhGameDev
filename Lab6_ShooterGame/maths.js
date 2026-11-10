@@ -65,3 +65,7 @@ function calculate_falloff_linear(min, max, near, far, dist) {
     const dist_normal = (dist - near) / (far - near);
     return dist_normal * min + (1.0 - dist_normal) * max // unfinished
 }
+
+function randfloat(min, max) {
+    return Math.random() * (max - min) + min;
+}
