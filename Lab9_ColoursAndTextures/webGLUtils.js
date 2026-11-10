@@ -88,7 +88,20 @@ function createMesh(gl, program, vertices, indices) {
 
 function loadTexture(gl, url) {
 	const texture = gl.createTexture();
-	gl.bindTxture(gl.TEXTURE_2D)
+	gl.bindTxture(gl.TEXTURE_2D, texture);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+	// temp 1x1 magenta pixel
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA,
+		gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 255, 255])
+	);
+
+	const image = new Image();
+	image.src = url;
+	image.onload = () => {
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.te
+	}
 
 	// unfinished
 }
