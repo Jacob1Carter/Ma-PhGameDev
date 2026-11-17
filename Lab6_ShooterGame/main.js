@@ -36,6 +36,8 @@ const GameState = Object.freeze({
 /** @type {string} */
 let currentGameState = GameState.PLAYING;
 
+let previousTimestamp = 0;
+
 // --- SHADER SETUP ---
 const vertexShaderSource = `#version 300 es
     precision mediump float;
@@ -221,7 +223,7 @@ function init() {
 }
 
 // input
-function processInput(currentTime) {
+function processInput(deltaTime) {
     if (currentGameState !== GameState.PLAYING) {
         if (keys.Space) {
             currentGameState = GameState.PLAYING;
@@ -230,6 +232,7 @@ function processInput(currentTime) {
             return;
         }
     }
+    const timeScale = deltaTime / 16.666;
 
     if (keys.r) {
         console.log("SPACE")
@@ -252,10 +255,10 @@ function processInput(currentTime) {
 
     // player movement
 
-    if (keys.ArrowUp || keys.w) playerPos.y += playerSpeed;
-    if (keys.ArrowDown || keys.s) playerPos.y -= playerSpeed;
-    if (keys.ArrowLeft || keys.a) playerPos.x -= playerSpeed;
-    if (keys.ArrowRight || keys.d) playerPos.x += playerSpeed;
+    if (keys.ArrowUp || keys.w) playerPos.y += playerSpeed * timeScale;
+    if (keys.ArrowDown || keys.s) playerPos.y -= playerSpeed * timeScale;
+    if (keys.ArrowLeft || keys.a) playerPos.x -= playerSpeed * timeScale;
+    if (keys.ArrowRight || keys.d) playerPos.x += playerSpeed * timeScale;
     
     if (playerPos.x > rightBoundary) playerPos.x = rightBoundary;
     if (playerPos.x < leftBoundary) playerPos.x = leftBoundary;
@@ -280,7 +283,7 @@ function processInput(currentTime) {
 }
 
 // update
-function update(currentTime) {
+function update(currentTime, deltaTime) {
     if (currentGameState !== GameState.PLAYING) {
         return;
     }
@@ -293,6 +296,8 @@ function update(currentTime) {
         }
         return;
     }
+
+    const timeScale = deltaTime / 16.666;
 
     isAimingAtShip = [
         false,
@@ -326,15 +331,15 @@ function update(currentTime) {
 
             const crossProduct = getCrossProduct(turretDirVector, unitTargetDirVector);
             if (Math.abs(crossProduct.z) > 0.02) {
-                aimAngles[i] += Math.sign(crossProduct.z) * rotationSpeed;
+                aimAngles[i] += Math.sign(crossProduct.z) * rotationSpeed * timeScale;
             }
         }
     }
 
     for (let i=0; i < activeLasers.length; i++) {
         const laser = activeLasers[i];
-        laser.x += laser.vx;
-        laser.y += laser.vy;
+        laser.x += laser.vx * timeScale;
+        laser.y += laser.vy * timeScale;
 
         let laserBlocked = false;
         for (let j=0; j < asteroids.length; j++) {
@@ -407,9 +412,13 @@ function render() {
 }
 
 // main loop
-function gameLoop(timestamp) {
-    processInput(timestamp);
-    update(timestamp);
+function gameLoop(currentTimestamp) {
+    if (!previousTimestamp) previousTimestamp = currentTimestamp;
+    const deltaTime = currentTimestamp - previousTimestamp;
+    previousTimestamp = currentTimestamp;
+
+    processInput(deltaTime);
+    update(currentTimestamp, deltaTime);
     render();
     requestAnimationFrame(gameLoop);
 }
