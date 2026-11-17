@@ -69,7 +69,7 @@ function createMesh(gl, program, vertices, indices) {
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
 	// Position attribute
-	const stride = 6 * Float32Array.BYTES_PER_ELEMENT;
+	const stride = 8 * Float32Array.BYTES_PER_ELEMENT;
 	const positionLocation = gl.getAttribLocation(program, "aPosition");
 	gl.enableVertexAttribArray(positionLocation);
 	gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
@@ -80,15 +80,24 @@ function createMesh(gl, program, vertices, indices) {
 	gl.enableVertexAttribArray(colourLocation);
 	gl.vertexAttribPointer(colourLocation, 3, gl.FLOAT, false, stride, offset);
 
+	offset = 6 * Float32Array.BYTES_PER_ELEMENT;
+	const texCoordsLocation = gl.getAttribLocation(program, "aTexCoord");
+	gl.enableVertexAttribArray(texCoordsLocation);
+	gl.vertexAttribPointer(texCoordsLocation, 2, gl.FLOAT, false, stride, offset);
+
 	// Unbind VAO
 	gl.bindVertexArray(null);
 
 	return vao;
 }
 
+function isPowerOf2(x) {
+	return (x & (x - 1)) === 0;
+}
+
 function loadTexture(gl, url) {
 	const texture = gl.createTexture();
-	gl.bindTxture(gl.TEXTURE_2D, texture);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 	// temp 1x1 magenta pixel
@@ -100,8 +109,22 @@ function loadTexture(gl, url) {
 	image.src = url;
 	image.onload = () => {
 		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.te
-	}
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+		
+		if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+			gl.generateMipmap(gl.TEXTURE_2D);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		} else {
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		}
 
-	// unfinished
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+	};
+
+	return texture;
 }
