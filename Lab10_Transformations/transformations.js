@@ -86,12 +86,19 @@ function drawSquare() {
 }
 
 // Render frame
-function render() {
+function render(time) {
 
     // Clear frame buffers
 	gl.clear(gl.COLOR_BUFFER_BIT);
 
-	const model = new Mat4().rotate([0, 0, 1], 45);
+	const rotationsPerSecond = 1/5;
+	const angle = rotationsPerSecond * time * 0.001 * 2 * Math.PI;
+	const model = new Mat4()
+		.rotate([0, 0, 1], angle)
+		.translate([0.4, 0.4, 0])
+		.rotate([0, 0, 1], -angle*4)
+		.scale([0.25*Math.sin(angle), 0.25*Math.sin(angle), 1]);
+	
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "uModel"), false, model.m);
 
   // draw

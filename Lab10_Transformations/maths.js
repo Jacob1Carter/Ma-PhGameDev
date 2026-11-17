@@ -230,7 +230,7 @@ class Mat4 {
 
     rotate(axis, angle) {
         axis = normaliseVector(axis);
-        angle = toRad(angle);
+        // angle = toRad(angle);
         const [x, y, z] = axis;
         const c = Math.cos(angle);
         const s = Math.sin(angle);
