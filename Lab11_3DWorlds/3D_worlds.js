@@ -109,6 +109,14 @@ const indices = new Uint16Array([
     30, 31, 32, 33, 34, 35   // top
 ]);
 
+/*
+// ? This arrangement of cubes does work:
+const cubes = [
+    { position : [-3, -1, -5] },
+    { position : [0, 0, -15] }
+];
+*/
+
 const cubes = [
     { position : [0, 0, -2] },
     { position : [0, 0, -6] }
@@ -158,7 +166,8 @@ function render(timestamp) {
     const view = camera.getViewMatrix();
 
     //Calculate projecton matrix
-    //const projection = camera.getOrthographicMatrix(-2, 2, -2, 2, -0.6, 100); // changed to -0.6 and fixed, not sure why
+    //const projection = camera.getOrthographicMatrix(-2, 2, -2, 2, 0, 100); // ? Same as the tutorial, but is broken
+    //const projection = camera.getOrthographicMatrix(-2, 2, -2, 2, -0.6, 100); // ? Changing the near fixes it, but not sure why it wasn't working already
     const projection = camera.getPerspectiveMatrix();
     
     gl.uniformMatrix4fv(gl.getUniformLocation(program, "uView"), false, view.m);
