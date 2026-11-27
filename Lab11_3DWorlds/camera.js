@@ -24,7 +24,7 @@ class Camera {
             this.right[2], this.up[2], -this.front[2], 0,
             -getDotProduct(this.eye, this.right),
             -getDotProduct(this.eye, this.up),
-            -getDotProduct(this.eye, this.front),
+            getDotProduct(this.eye, this.front),
             1
         ])
     }

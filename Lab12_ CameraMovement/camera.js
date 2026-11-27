@@ -37,7 +37,7 @@ class Camera {
             this.right[2], this.up[2], -this.front[2], 0,
             -getDotProduct(this.eye, this.right),
             -getDotProduct(this.eye, this.up),
-            -getDotProduct(this.eye, this.front),
+            getDotProduct(this.eye, this.front),
             1
         ])
     }
@@ -73,8 +73,8 @@ class Camera {
 
     move(forward, right, dt) {
         let moveDir = [0, 0, 0];
-        if (forward > 0) moveDir = addVectors(moveDir, this.front);
-        if (forward < 0) moveDir = subtractVectors(moveDir, this.front);
+        if (forward > 0) moveDir = subtractVectors(moveDir, this.front);
+        if (forward < 0) moveDir = addVectors(moveDir, this.front);
         if (right > 0) moveDir = addVectors(moveDir, this.right);
         if (right < 0) moveDir = subtractVectors(moveDir, this.right);
         
